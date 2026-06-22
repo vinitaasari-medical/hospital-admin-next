@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { validateRouteParam } from "@/lib/utils/params";
 import { motion } from "framer-motion";
 import { ArrowLeft, Search, Users as UsersIcon, ShieldCheck, Building2, Upload, Trash2, Pencil } from "lucide-react";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -60,11 +61,14 @@ const SectionCard = ({
 
 const ClientProfile = () => {
   const params = useParams();
-  const id = params?.id as string;
+  const id = validateRouteParam(params?.id);
   const router = useRouter();
   const sidebarMargin = useSidebarMargin();
 
-  const source = useMemo(() => initialClients.find((c) => c.id === id), [id]);
+  const source = useMemo(
+    () => (id ? initialClients.find((c) => c.id === id) : undefined),
+    [id]
+  );
   const [client, setClient] = useState<Client | undefined>(source);
   useEffect(() => setClient(source), [source]);
 
@@ -77,6 +81,12 @@ const ClientProfile = () => {
   const [editName, setEditName] = useState("");
   const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!id) router.replace("/admin/clients");
+  }, [id, router]);
+
+  if (!id) return null;
 
   const openEdit = () => {
     if (!client) return;

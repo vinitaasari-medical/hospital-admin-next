@@ -792,6 +792,25 @@ const UserManagement = () => {
           description: "Please upload a CSV file only.",
           variant: "destructive",
         });
+        e.target.value = "";
+        return;
+      }
+      if (file.size === 0) {
+        toast({
+          title: "Empty file",
+          description: "The selected file is empty.",
+          variant: "destructive",
+        });
+        e.target.value = "";
+        return;
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Maximum file size is 20 MB.",
+          variant: "destructive",
+        });
+        e.target.value = "";
         return;
       }
       setImportFile(file);

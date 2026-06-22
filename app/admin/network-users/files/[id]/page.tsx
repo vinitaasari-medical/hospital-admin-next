@@ -1,6 +1,7 @@
 'use client';
 import { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { validateRouteParam } from "@/lib/utils/params";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -61,7 +62,8 @@ const LoadingSkeleton = () => (
 // ─── Inner content (needs Suspense for useSearchParams) ───────────────────────
 
 const NetworkImportFileContent = () => {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
+  const id = validateRouteParam(params.id);
   const searchParams = useSearchParams();
   const router = useRouter();
   const sidebarMargin = useSidebarMargin();
@@ -75,6 +77,7 @@ const NetworkImportFileContent = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) { router.replace("/admin/network-users"); return; }
     const load = async () => {
       try {
         const res = await viewNetworkImportFile(id);
@@ -87,7 +90,9 @@ const NetworkImportFileContent = () => {
       }
     };
     load();
-  }, [id]);
+  }, [id, router]);
+
+  if (!id) return null;
 
   const errorCount = records.filter(hasAnyError).length;
   const importedCount = records.filter((r) => r.record_status === "imported").length;

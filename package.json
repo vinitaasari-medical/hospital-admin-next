@@ -30,6 +30,7 @@
     "react-day-picker": "^8.10.2",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.77.0",
+    "react-phone-input-2": "^2.15.1",
     "react-resizable-panels": "^4.11.2",
     "recharts": "^3.8.1",
     "socket.io-client": "^4.8.3",

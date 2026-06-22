@@ -881,11 +881,19 @@ const Broadcast = () => {
                 className="hidden"
                 accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
                 onChange={(e) => {
+                  const MAX_BYTES = 20 * 1024 * 1024;
                   const files = Array.from(e.target.files ?? []);
-                  if (files.length) {
+                  const oversized = files.filter((f) => f.size > MAX_BYTES);
+                  if (oversized.length) {
+                    appToast.error(`${oversized.map((f) => f.name).join(", ")} exceed${oversized.length === 1 ? "s" : ""} the 20 MB limit.`);
+                    e.target.value = "";
+                    return;
+                  }
+                  const valid = files.filter((f) => f.size > 0);
+                  if (valid.length) {
                     setBAttachments((prev) => [
                       ...prev,
-                      ...files.map((f) => ({ file: f, uploading: false })),
+                      ...valid.map((f) => ({ file: f, uploading: false })),
                     ]);
                   }
                   e.target.value = "";

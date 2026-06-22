@@ -34,6 +34,8 @@ export interface SidebarNavItem {
    * "activePages". Items without permissionKey are always included.
    */
   permissionKey?: string;
+  /** When true, the item is hidden from the sidebar without being removed. */
+  hidden?: boolean;
 }
 export interface SidebarSection {
   section: string;
@@ -72,6 +74,7 @@ const icon = (C: React.ComponentType<{ className?: string }>) => (
 
 function filterByPermission(items: SidebarItem[], activePages: string[]): SidebarItem[] {
   return items.filter((item) => {
+    if ("hidden" in item && item.hidden) return false;
     if (!("permissionKey" in item) || !item.permissionKey) return true;
     return activePages.includes(item.permissionKey);
   });
@@ -109,7 +112,7 @@ export function buildHospitalItems(activePages: string[]): SidebarItem[] {
     { label: "Departments",    path: "/admin/departments",      icon: icon(FolderOpen),   permissionKey: "Department" },
     { label: "Network Users",  path: "/admin/network-users",   icon: icon(Users),         permissionKey: "Users" },
     { label: "Admins",         path: "/admin/admins",           icon: icon(Shield) },
-    { label: "Push-To-Talk",   path: "/admin/ptt",              icon: icon(Mic) },
+    { label: "Push-To-Talk",   path: "/admin/ptt",              icon: icon(Mic),  hidden: true },
     { label: "Broadcast",      path: "/admin/broadcast",        icon: icon(Radio) },
     { section: "System" } as SidebarSection,
     { label: "Settings",       path: "/admin/settings",         icon: icon(Settings),     permissionKey: "Setting" },
@@ -150,7 +153,7 @@ const hospitalItems: SidebarItem[] = [
   { label: "Departments",    path: "/admin/departments",     icon: icon(FolderOpen) },
   { label: "Network Users",  path: "/admin/network-users",  icon: icon(Users) },
   { label: "Admins",         path: "/admin/admins",          icon: icon(Shield) },
-  { label: "Push-To-Talk",   path: "/admin/ptt",             icon: icon(Mic) },
+  { label: "Push-To-Talk",   path: "/admin/ptt",             icon: icon(Mic),  hidden: true },
   { label: "Broadcast",      path: "/admin/broadcast",       icon: icon(Radio) },
   { section: "System" },
   { label: "Settings",       path: "/admin/settings",        icon: icon(Settings) },

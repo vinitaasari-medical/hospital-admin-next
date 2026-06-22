@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { useSidebarMargin } from "@/hooks/use-sidebar-margin";
 import { adminSidebarItems } from "@/config/adminSidebarItems";
+import { validateRouteParam } from "@/lib/utils/params";
 import {
   ArrowLeft,
   ListFilter,
@@ -123,7 +124,7 @@ function mapUser(r: BroadcastUserRecord): MappedUser {
 export default function ListDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const listId = params.id as string;
+  const listId = validateRouteParam(params.id);
   const sidebarMargin = useSidebarMargin();
 
   const [activeTab, setActiveTab] = useState("users");
@@ -157,6 +158,7 @@ export default function ListDetailPage() {
   // ─── Fetch users ──────────────────────────────────────────────────────────────
 
   const fetchUsers = useCallback(async (search?: string, filter?: Record<string, string>) => {
+    if (!listId) return;
     setUsersLoading(true);
     try {
       const f = filter ?? userFilter;
@@ -179,6 +181,7 @@ export default function ListDetailPage() {
   // ─── Fetch broadcasts ────────────────────────────────────────────────────────
 
   const fetchBroadcasts = useCallback(async (search?: string) => {
+    if (!listId) return;
     setBroadcastsLoading(true);
     try {
       const res = await listBroadcasts({
@@ -485,6 +488,13 @@ export default function ListDetailPage() {
   const rankOptions = ranks.map((r) => ({ label: r.name, value: r.id }));
   const hasActiveFilter = userFilter.profession_id !== "all" || userFilter.rank_id !== "all";
 
+  // Guard: redirect to broadcast list if listId is invalid
+  useEffect(() => {
+    if (!listId) router.replace("/admin/broadcast");
+  }, [listId, router]);
+
+  if (!listId) return null;
+
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -672,11 +682,19 @@ export default function ListDetailPage() {
                 className="hidden"
                 accept="image/*,video/*,.pdf,.doc,.docx"
                 onChange={(e) => {
+                  const MAX_BYTES = 20 * 1024 * 1024;
                   const files = Array.from(e.target.files ?? []);
-                  if (files.length) {
+                  const oversized = files.filter((f) => f.size > MAX_BYTES);
+                  if (oversized.length) {
+                    appToast.error(`${oversized.map((f) => f.name).join(", ")} exceed${oversized.length === 1 ? "s" : ""} the 20 MB limit.`);
+                    e.target.value = "";
+                    return;
+                  }
+                  const valid = files.filter((f) => f.size > 0);
+                  if (valid.length) {
                     setBAttachments((prev) => [
                       ...prev,
-                      ...files.map((f) => ({ file: f, uploading: false })),
+                      ...valid.map((f) => ({ file: f, uploading: false })),
                     ]);
                   }
                   e.target.value = "";

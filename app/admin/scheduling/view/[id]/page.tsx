@@ -1,6 +1,7 @@
 'use client';
 import { DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { validateRouteParam } from "@/lib/utils/params";
 import { io, Socket } from "socket.io-client";
 import { DayPicker, type DateRange as DayPickerDateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
@@ -188,7 +189,7 @@ export default function ScheduleView() {
   const sidebarMargin = useSidebarMargin();
   const searchParams = useSearchParams();
   const fromParam = searchParams.get("from") || "/admin/scheduling";
-  const dutyCode = typeof id==="string" ? id : Array.isArray(id) ? id[0] : "";
+  const dutyCode = validateRouteParam(id) ?? "";
 
   // ── Intervals ─────────────────────────────────────────────────────────────
   const [intervals, setIntervals] = useState<Interval[]>([]);
@@ -243,6 +244,11 @@ export default function ScheduleView() {
   const [templateFilter, setTemplateFilter] = useState<"all"|"live"|"draft">("all");
   const [templateStartDate, setTemplateStartDate] = useState("");
   const [templateEndDate, setTemplateEndDate] = useState("");
+
+  // ── Invalid param guard ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!dutyCode) router.replace("/admin/scheduling");
+  }, [dutyCode, router]);
 
   // ── Socket initialization ──────────────────────────────────────────────────
 
@@ -444,7 +450,7 @@ export default function ScheduleView() {
     if (keys.length===1) {
       const key = keys[0];
       const assignmentId = coverageMap[key];
-      if (!assignmentId) { console.warn("[handleAssign] No assignmentId for key:", key); return; }
+      if (!assignmentId) { return; }
       const dateKey = key.split("::")[0];
       const isToday = dateKey===todayKey;
       const body = { staffing_coverage_assignment_id:assignmentId, assignee_user_id:empId };
@@ -461,7 +467,7 @@ export default function ScheduleView() {
     } else {
       // Multi-assign
       const assignmentIds = keys.map((k) => coverageMap[k]).filter(Boolean);
-      if (assignmentIds.length===0) { console.warn("[handleAssign] No assignmentIds for keys:", keys); return; }
+      if (assignmentIds.length===0) { return; }
 
       if (isPublished) {
         const todayKeys = keys.filter((k) => k.split("::")[0]===todayKey);

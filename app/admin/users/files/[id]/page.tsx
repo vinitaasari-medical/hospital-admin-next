@@ -1,6 +1,7 @@
 'use client';
 import { Suspense, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { validateRouteParam } from "@/lib/utils/params";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -126,7 +127,8 @@ const LoadingSkeleton = () => (
 // ─── Inner component (reads searchParams, requires Suspense) ─────────────────
 
 const ImportFileDetailContent = () => {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
+  const id = validateRouteParam(params.id);
   const searchParams = useSearchParams();
   const router = useRouter();
   const sidebarMargin = useSidebarMargin();
@@ -140,6 +142,7 @@ const ImportFileDetailContent = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) { router.replace("/admin/users"); return; }
     const load = async () => {
       try {
         const res = await viewImportFile(id);
@@ -153,7 +156,9 @@ const ImportFileDetailContent = () => {
       }
     };
     load();
-  }, [id]);
+  }, [id, router]);
+
+  if (!id) return null;
 
   const errorCount = records.filter(hasAnyError).length;
   const validCount = records.length - errorCount;

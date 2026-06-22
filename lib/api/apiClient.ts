@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from "axios";
-import { SignJWT } from "jose";
 import {
   apiBasePath,
   apiDomainAdmin,
@@ -32,13 +31,14 @@ const getUser = (): Record<string, unknown> | null => {
 /*                         JWT SIGN (unauth only)                             */
 /* -------------------------------------------------------------------------- */
 
+// Delegates to a Next.js server route so the signing secret is never
+// embedded in the client bundle (avoids NEXT_PUBLIC_ exposure).
 const signJwtToken = async (): Promise<string> => {
-  const secret = new TextEncoder().encode(
-    process.env.NEXT_PUBLIC_DEFAULT_SECRET_KEY!
-  );
-  return new SignJWT({ user_type: "hospital-admin" })
-    .setProtectedHeader({ alg: "HS256", typ: "JWT", channel: "web" })
-    .sign(secret);
+  const res = await fetch("/api/auth/sign-token", { method: "POST" });
+  if (!res.ok) throw new Error("Token service unavailable");
+  const body = (await res.json()) as { token?: string; error?: string };
+  if (!body.token) throw new Error(body.error ?? "Token service unavailable");
+  return body.token;
 };
 
 /* -------------------------------------------------------------------------- */

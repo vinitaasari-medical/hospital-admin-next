@@ -503,7 +503,16 @@ const UploadCsvModal = ({ open, onOpenChange, onUploaded }: UploadCsvModalProps)
             type="file"
             accept=".csv"
             className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              if (f.size === 0 || f.size > 20 * 1024 * 1024) {
+                appToast.error(f.size === 0 ? "The selected file is empty." : "Maximum file size is 20 MB.");
+                e.target.value = "";
+                return;
+              }
+              setFile(f);
+            }}
           />
         </div>
 

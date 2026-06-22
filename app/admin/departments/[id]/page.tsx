@@ -2,6 +2,7 @@
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { validateRouteParam } from "@/lib/utils/params";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Users as UsersIcon, Radio, CalendarClock, Building2,
@@ -833,8 +834,8 @@ const SubDepartmentModal = ({
 
 const DepartmentProfile = () => {
   const params = useParams();
-  const id = typeof params.id === "string" ? params.id : Array.isArray(params.id) ? params.id[0] : "";
-  const sub_id = typeof params.sub_id === "string" ? params.sub_id : Array.isArray(params.sub_id) ? params.sub_id[0] : null;
+  const id = validateRouteParam(params.id) ?? "";
+  const sub_id = validateRouteParam(params.sub_id);
   const deptId = sub_id ?? id;
   const router = useRouter();
   const sidebarMargin = useSidebarMargin();
@@ -845,6 +846,7 @@ const DepartmentProfile = () => {
   const [deptLoading, setDeptLoading] = useState(true);
 
   const loadDept = useCallback(async () => {
+    if (!deptId) { router.replace("/admin/departments"); return; }
     setDeptLoading(true);
     try {
       const res = await fetchDepartments();

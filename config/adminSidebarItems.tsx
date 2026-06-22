@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Shield, Building2, Users, Radio, FolderOpen,
-  Settings, Mic,
+  Settings,
 } from "lucide-react";
 
 export type SidebarItem = {
@@ -22,7 +22,6 @@ export const adminSidebarItems: SidebarItem[] = [
   { label: "Users", path: "/admin/users", icon: <Users className="h-4 w-4" /> },
   { label: "Broadcast", path: "/admin/broadcast", icon: <Radio className="h-4 w-4" /> },
   { label: "Departments", path: "/admin/departments", icon: <FolderOpen className="h-4 w-4" /> },
-  { label: "Push-To-Talk", path: "/admin/ptt", icon: <Mic className="h-4 w-4" /> },
-  { section: "System" },
+{ section: "System" },
   { label: "Settings", path: "/admin/settings", icon: <Settings className="h-4 w-4" /> },
 ];

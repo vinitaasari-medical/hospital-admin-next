@@ -44,7 +44,9 @@ const DashboardSidebar = (_props: DashboardSidebarProps = {}) => {
     : "A";
 
   const isPTT = pathname.startsWith("/admin/ptt");
-  const items: SidebarItem[] = isPTT ? (pttSidebarItems as SidebarItem[]) : scope.items;
+  const items: SidebarItem[] = isPTT
+    ? (pttSidebarItems as SidebarItem[])
+    : scope.items.filter((item) => !("hidden" in item && item.hidden));
 
   const indent: Record<string, string> = {
     super_admin: "",
