@@ -108,28 +108,27 @@ interface SavedSchedule {
   department?: string;
   startDate: string;
   endDate: string;
-  status: "Published" | "Draft";
+  status: string;
 }
 
-const mapApiSchedule = (d: Record<string, unknown>): SavedSchedule => ({
-  id: (d.duty_code as string) || (d.id as string),
-  title: (d.title as string) || "",
-  startDate: d.start_date
-    ? new Date((d.start_date as number) * 1000).toLocaleDateString(undefined, {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-    : "",
-  endDate: d.end_date
-    ? new Date((d.end_date as number) * 1000).toLocaleDateString(undefined, {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-    : "",
-  status: (d.status as string) === "published" ? "Published" : "Draft",
-});
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtEpoch = (epoch: number) => {
+  const dt = new Date(epoch * 1000);
+  return `${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
+};
+
+const mapApiSchedule = (d: Record<string, unknown>): SavedSchedule => {
+  const rawStatus = ((d.status) as string | undefined) ?? "";
+  // Capitalise first letter exactly as the React source does (status.charAt(0).toUpperCase() + status.slice(1))
+  const displayStatus = rawStatus ? rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1) : "—";
+  return {
+    id: (d.duty_code as string) || (d.id as string),
+    title: (d.title as string) || "",
+    startDate: d.start_date ? fmtEpoch(d.start_date as number) : "",
+    endDate: d.end_date ? fmtEpoch(d.end_date as number) : "",
+    status: displayStatus,
+  };
+};
 
 // ─── SectionCard ──────────────────────────────────────────────────────────────
 
@@ -856,10 +855,15 @@ const DepartmentProfile = () => {
       if (found) {
         if (sub_id) {
           localStorage.setItem("sub_department_id", sub_id);
+          localStorage.setItem("sub_department_name", found.name);
           localStorage.setItem("department_id", id);
+          const parent = all.find((d) => d.id === id);
+          if (parent) localStorage.setItem("department_name", parent.name);
         } else {
           localStorage.setItem("department_id", id);
+          localStorage.setItem("department_name", found.name);
           localStorage.removeItem("sub_department_id");
+          localStorage.removeItem("sub_department_name");
         }
         localStorage.removeItem("group_id");
       }
@@ -986,6 +990,18 @@ const DepartmentProfile = () => {
 
   const loadTemplates = useCallback(async () => {
     let groupId = localStorage.getItem("group_id");
+    if (!groupId) {
+      try {
+        const res = await listOfficialGroups(deptId);
+        const grps = (res.content?.data ?? []) as Array<Record<string, unknown>>;
+        if (grps.length > 0) {
+          groupId = grps[0].id as string;
+          localStorage.setItem("group_id", groupId);
+        }
+      } catch {
+        // no group — leave templates empty
+      }
+    }
     if (!groupId) return;
     try {
       const subDeptId = localStorage.getItem("sub_department_id");
@@ -1450,11 +1466,10 @@ const DepartmentProfile = () => {
       key: "status",
       header: "Status",
       sortable: true,
-      cell: (s) => (
-        <StatusBadge tone={s.status === "Published" ? "success" : "neutral"}>
-          {s.status === "Published" ? "Published" : "Draft"}
-        </StatusBadge>
-      ),
+      cell: (s) => {
+        const tone = s.status.toLowerCase() === "published" ? "success" : getStatusTone(s.status);
+        return <StatusBadge tone={tone}>{s.status}</StatusBadge>;
+      },
     },
   ];
 

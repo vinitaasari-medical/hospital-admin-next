@@ -253,6 +253,10 @@ const CreateSchedule = () => {
   const templateId = searchParams.get("template");
   const departmentParam = searchParams.get("department") || "";
   const fromParam = searchParams.get("from") || "/admin/scheduling";
+  const prefillName = searchParams.get("name") || "";
+  const prefillStart = searchParams.get("start") || "";
+  const prefillEnd = searchParams.get("end") || "";
+  const prefillDutyCode = searchParams.get("duty_code") || "";
   const [editStatus, setEditStatus] = useState<"Published" | "Draft" | null>(null);
   const [editDutyCode, setEditDutyCode] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -437,6 +441,20 @@ const CreateSchedule = () => {
     } catch {
       // ignore malformed template data
     }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Prefill from "Create New Schedule" navigation (name + date range + duty_code passed as query params)
+  useEffect(() => {
+    if (editId || templateId) return; // edit/template modes handle their own prefill
+    if (prefillName) setTitle(prefillName);
+    const toLocalDateStr = (epochStr: string) => {
+      const d = new Date(parseInt(epochStr, 10) * 1000);
+      if (isNaN(d.getTime())) return "";
+      const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${dd}`;
+    };
+    if (prefillStart) { const s = toLocalDateStr(prefillStart); if (s) setStartDate(s); }
+    if (prefillEnd)   { const e = toLocalDateStr(prefillEnd);   if (e) setEndDate(e); }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const allDuties = useMemo(
@@ -661,7 +679,8 @@ const CreateSchedule = () => {
     const groupId = localStorage.getItem("group_id") || "";
     const departmentId = localStorage.getItem("department_id") || "";
     const subDeptId = localStorage.getItem("sub_department_id") || undefined;
-    const dutyCode = editDutyCode || genDutyCode();
+    // prefillDutyCode = existing duty code when navigating from "Create New Schedule" on ViewSchedule
+    const dutyCode = editDutyCode || prefillDutyCode || genDutyCode();
     setSaving(true);
     try {
       if (publish) {

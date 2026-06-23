@@ -6,9 +6,10 @@ import { io, Socket } from "socket.io-client";
 import { DayPicker, type DateRange as DayPickerDateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import {
-  ArrowLeft, GripVertical, X, Sunrise, Sun, Moon, MapPin,
-  FileSpreadsheet, Printer, Send, Pencil, Undo2, Globe, FileDown,
+  ArrowLeft, X, Sunrise, Sun, Moon, MapPin,
+  FileSpreadsheet, Printer, Send, Pencil, Undo2, FileDown,
   Search, CalendarDays, Plus, LayoutTemplate, FilePlus2,
+  LayoutGrid, Users,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import DashboardSidebar from "@/components/DashboardSidebar";
@@ -32,6 +33,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
   listDuties, getDutyById, publishStaffingDuty, assignCoverageUser,
@@ -172,13 +174,7 @@ const rs = (rank: string) => RANK_SHORT[rank] ?? rank.slice(0,3).toUpperCase();
 
 // ─── Socket helpers ───────────────────────────────────────────────────────────
 
-const getSocketBaseUrl = () => {
-  const env = process.env.NEXT_PUBLIC_ENVIRONMENT;
-  const host = env==="test"
-    ? process.env.NEXT_PUBLIC_ENVIRONMENT_SOCKET_URL_TEST
-    : process.env.NEXT_PUBLIC_ENVIRONMENT_SOCKET_URL_DEV;
-  return `https://${host}`;
-};
+const getSocketBaseUrl = () => process.env.NEXT_PUBLIC_BASE_URL_STAFFING ?? "";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -190,6 +186,13 @@ export default function ScheduleView() {
   const searchParams = useSearchParams();
   const fromParam = searchParams.get("from") || "/admin/scheduling";
   const dutyCode = validateRouteParam(id) ?? "";
+
+  // ── Department breadcrumb (display only) ──────────────────────────────────
+  const [deptName, setDeptName] = useState("");
+  useEffect(() => {
+    const name = localStorage.getItem("sub_department_name") || localStorage.getItem("department_name") || "";
+    setDeptName(name);
+  }, []);
 
   // ── Intervals ─────────────────────────────────────────────────────────────
   const [intervals, setIntervals] = useState<Interval[]>([]);
@@ -461,6 +464,7 @@ export default function ScheduleView() {
           .catch((err: {message?:string}) => toast({ title:"Failed to save assignment", description:err.message, variant:"destructive" }));
       } else {
         if (!socketRef.current?.connected) { toast({ title:"Socket not connected", variant:"destructive" }); return; }
+        console.log("[socket] new_assignment (single)", body);
         socketRef.current.emit("new_assignment", body);
         toast({ title:empId?"User assigned!":"User unassigned!" });
       }
@@ -477,6 +481,7 @@ export default function ScheduleView() {
 
         if (otherIds.length>0) {
           if (!socketRef.current?.connected) { toast({ title:"Socket not connected", variant:"destructive" }); return; }
+          console.log("[socket] new_assignment (multi-other)", { staffing_coverage_assignment_ids:otherIds, assignee_user_id:empId });
           socketRef.current.emit("new_assignment", { staffing_coverage_assignment_ids:otherIds, assignee_user_id:empId });
         }
         if (todayIds.length>0) {
@@ -486,6 +491,7 @@ export default function ScheduleView() {
         } else { toast({ title:empId?"Users assigned!":"Assignments removed!" }); }
       } else {
         if (!socketRef.current?.connected) { toast({ title:"Socket not connected", variant:"destructive" }); return; }
+        console.log("[socket] new_assignment (multi-draft)", { staffing_coverage_assignment_ids:assignmentIds, assignee_user_id:empId });
         socketRef.current.emit("new_assignment", { staffing_coverage_assignment_ids:assignmentIds, assignee_user_id:empId });
         toast({ title:empId?"Users assigned!":"Assignments removed!" });
       }
@@ -598,6 +604,9 @@ export default function ScheduleView() {
     if (deptParam) parts.unshift(`department=${encodeURIComponent(deptParam)}`);
     parts.push(`start=${Math.floor(createRange.from.getTime()/1000)}`);
     parts.push(`end=${Math.floor(createRange.to.getTime()/1000)}`);
+    const scheduleName = schedule?.title || dutyCode || "";
+    if (scheduleName) parts.push(`name=${encodeURIComponent(scheduleName)}`);
+    parts.push(`duty_code=${encodeURIComponent(dutyCode)}`);
     router.push(`/admin/scheduling/create?${parts.join("&")}`);
     setCreateOpen(false); setCreateRange(undefined);
   };
@@ -801,12 +810,12 @@ export default function ScheduleView() {
         <div className="max-w-[1800px] mx-auto p-6 space-y-4">
 
           {/* ── Header ───────────────────────────────────────────────────── */}
-          <div className="flex items-center justify-between gap-4 flex-wrap print:hidden">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={()=>router.push(fromParam)} className="gap-1.5">
+          <div className="flex items-start justify-between gap-4 flex-wrap print:hidden">
+            <div className="flex flex-col gap-1">
+              <Button variant="ghost" size="sm" onClick={()=>router.push(fromParam)} className="gap-1.5 self-start -ml-2 text-muted-foreground hover:text-foreground h-8">
                 <ArrowLeft className="h-4 w-4"/>Back
               </Button>
-              <div>
+              <div className="mt-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl font-bold text-foreground">{schedule?.title||dutyCode}</h1>
                   {isPublished ? (
@@ -817,61 +826,58 @@ export default function ScheduleView() {
                   ) : (
                     <span className="inline-flex items-center text-xs font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full border">Draft</span>
                   )}
-                  {schedule?.showDutyToNetwork && (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium border border-primary/40 text-primary bg-primary/5 px-2 py-0.5 rounded-full">
-                      <Globe className="h-3 w-3"/>Published to Network
-                    </span>
-                  )}
                 </div>
-                {schedule && <p className="text-sm text-muted-foreground mt-0.5">{schedule.startDate} → {schedule.endDate}</p>}
+                <p className="text-sm text-muted-foreground mt-1">
+                  {deptName ? `Departments > ${deptName}` : schedule ? `${new Date(schedule.startDate+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})} – ${new Date(schedule.endDate+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})}` : ""}
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="text-right mr-1">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="text-right mr-0.5 border-r border-border pr-3">
                 <p className="text-xs text-muted-foreground">Assignments</p>
                 <p className="text-sm font-bold text-foreground">{totals.filled} <span className="text-muted-foreground font-normal">/ {totals.total}</span></p>
               </div>
-              <Button variant="outline" size="sm" onClick={()=>window.print()} className="gap-1.5"><Printer className="h-4 w-4"/>Print</Button>
-              <Button variant="outline" size="sm" onClick={exportToExcel} disabled={!schedule} className="gap-1.5"><FileSpreadsheet className="h-4 w-4"/>Export</Button>
-              <Button variant="outline" size="sm" onClick={()=>void downloadPdf()} disabled={!schedule} className="gap-1.5"><FileDown className="h-4 w-4"/>Download Table</Button>
-              <Button variant="outline" size="sm" onClick={()=>setConfirmAction("edit")} disabled={!schedule} className="gap-1.5"><Pencil className="h-4 w-4"/>Edit setup</Button>
+              <Button variant="outline" size="sm" onClick={()=>window.print()} className="gap-1.5 h-9 px-3.5"><Printer className="h-4 w-4"/>Print Table</Button>
+              <Button variant="outline" size="sm" onClick={exportToExcel} disabled={!schedule} className="gap-1.5 h-9 px-3.5"><FileSpreadsheet className="h-4 w-4"/>Export Excel</Button>
+              <Button variant="outline" size="sm" onClick={()=>void downloadPdf()} disabled={!schedule} className="gap-1.5 h-9 px-3.5"><FileDown className="h-4 w-4"/>Download Table</Button>
+              <Button variant="outline" size="sm" onClick={()=>setConfirmAction("edit")} disabled={!schedule} className="gap-1.5 h-9 px-3.5"><Pencil className="h-4 w-4"/>Edit</Button>
               {isPublished ? (
-                <Button variant="secondary" size="sm" onClick={()=>setConfirmAction("unpublish")} className="gap-1.5"><Undo2 className="h-4 w-4"/>Unpublish</Button>
+                <Button size="sm" disabled className="gap-1.5 h-9 px-3.5"><Send className="h-4 w-4"/>Published</Button>
               ) : (
-                <Button size="sm" onClick={()=>setConfirmAction("publish")} className="gap-1.5"><Send className="h-4 w-4"/>Publish</Button>
+                <Button size="sm" onClick={()=>setConfirmAction("publish")} className="gap-1.5 h-9 px-3.5"><Send className="h-4 w-4"/>Publish</Button>
               )}
             </div>
           </div>
 
           {/* ── Interval tabs + Add button ──────────────────────────────── */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 print:hidden flex-wrap">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 print:hidden flex-wrap">
             {intervals.map((iv) => {
               const isActive=currentInterval?.staffing_id===iv.staffing_id&&currentInterval?.start_date===iv.start_date;
               return (
                 <button key={`${iv.staffing_id}-${iv.start_date}`} type="button" onClick={()=>{ if (!isActive) setCurrentInterval(iv); }}
-                  className={cn("flex-shrink-0 flex flex-col items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-all border whitespace-nowrap min-w-[80px]", isActive?"bg-primary text-primary-foreground border-primary shadow-sm":"bg-card border-border text-muted-foreground hover:border-primary/40 hover:text-foreground")}>
-                  <span className="font-semibold">{ivLabel(iv)}</span>
-                  <span className={cn("text-[10px] mt-0.5",isActive?"text-primary-foreground/80":"text-muted-foreground/70")}>{ivRange(iv)}</span>
+                  className={cn("flex-shrink-0 flex flex-col items-center px-5 py-3 rounded-2xl font-medium transition-all border whitespace-nowrap min-w-[100px]", isActive?"bg-[#00172d] text-white border-[#00172d] shadow-md":"bg-card border-border text-muted-foreground hover:border-border hover:text-foreground hover:shadow-sm")}>
+                  <span className="font-bold text-sm leading-tight">{ivLabel(iv)}</span>
+                  <span className={cn("text-[11px] mt-0.5",isActive?"text-white/70":"text-muted-foreground/70")}>{ivRange(iv)}</span>
                 </button>
               );
             })}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="flex-shrink-0 h-9 w-9 rounded-lg border border-dashed border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-primary flex items-center justify-center transition-all" aria-label="Add schedule">
-                  <Plus className="h-4 w-4"/>
+                <button type="button" className="flex-shrink-0 h-11 w-11 rounded-full border-2 border-dashed border-gray-400 bg-gray-100 text-gray-500 flex items-center justify-center group transition-all duration-200 hover:bg-gray-200 hover:border-gray-500 hover:scale-110 active:scale-95" aria-label="Add schedule">
+                  <Plus className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90"/>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-64">
-                <DropdownMenuItem onClick={()=>{setExtendEnd(undefined);setExtendOpen(true);}} className="flex items-start gap-3 py-2.5">
+                <DropdownMenuItem onClick={()=>{setExtendEnd(undefined);setExtendOpen(true);}} className="flex items-start gap-3 py-2.5 focus:bg-gray-100 hover:bg-gray-100 focus:text-foreground cursor-pointer">
                   <CalendarDays className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0"/>
                   <div><p className="font-medium text-sm">Extend existing schedule</p><p className="text-xs text-muted-foreground">Apply current setup to new dates.</p></div>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={()=>{setCreateRange(undefined);setCreateOpen(true);}} className="flex items-start gap-3 py-2.5">
+                <DropdownMenuItem onClick={()=>{setCreateRange(undefined);setCreateOpen(true);}} className="flex items-start gap-3 py-2.5 focus:bg-gray-100 hover:bg-gray-100 focus:text-foreground cursor-pointer">
                   <FilePlus2 className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0"/>
                   <div><p className="font-medium text-sm">Create new schedule</p><p className="text-xs text-muted-foreground">Define a new schedule for a new date range.</p></div>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={()=>{void loadTemplates();setTemplateQuery("");setTemplateFilter("all");setTemplateStartDate("");setTemplateEndDate("");setTemplateOpen(true);}} className="flex items-start gap-3 py-2.5">
+                <DropdownMenuItem onClick={()=>{void loadTemplates();setTemplateQuery("");setTemplateFilter("all");setTemplateStartDate("");setTemplateEndDate("");setTemplateOpen(true);}} className="flex items-start gap-3 py-2.5 focus:bg-gray-100 hover:bg-gray-100 focus:text-foreground cursor-pointer">
                   <LayoutTemplate className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0"/>
                   <div><p className="font-medium text-sm">Select from template</p><p className="text-xs text-muted-foreground">Choose from saved schedule templates.</p></div>
                 </DropdownMenuItem>
@@ -881,13 +887,21 @@ export default function ScheduleView() {
 
           {/* ── View toggle + Search ─────────────────────────────────────── */}
           <div className="flex items-center gap-3 flex-wrap print:hidden">
-            <div className="flex rounded-lg border border-border bg-muted/20 p-0.5 gap-0.5">
-              <button type="button" onClick={()=>setViewMode("shift")} className={cn("px-3 py-1.5 rounded-md text-xs font-medium transition-all", viewMode==="shift"?"bg-card shadow-sm text-foreground":"text-muted-foreground hover:text-foreground")}>By Shift</button>
-              <button type="button" onClick={()=>setViewMode("employee")} className={cn("px-3 py-1.5 rounded-md text-xs font-medium transition-all", viewMode==="employee"?"bg-card shadow-sm text-foreground":"text-muted-foreground hover:text-foreground")}>By Employee</button>
-            </div>
-            <div className="relative max-w-xl flex-1">
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "shift" | "employee")}>
+              <TabsList>
+                <TabsTrigger value="shift" className="gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  By Shift
+                </TabsTrigger>
+                <TabsTrigger value="employee" className="gap-2">
+                  <Users className="h-4 w-4" />
+                  By Employee
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="relative max-w-2xl flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"/>
-              <Input placeholder="Search by name, role, duty, area, or shift... (e.g. 'Amina ICU' or 'Consultant ER')" className="pl-9 pr-8" value={searchQuery} onChange={(e)=>setSearchQuery(e.target.value)}/>
+              <Input placeholder="Search by name, role, duty, area, or shift... (e.g. 'Amina ICU' or 'Consultant ER')" className="pl-9 pr-8 h-10 bg-white border-gray-200" value={searchQuery} onChange={(e)=>setSearchQuery(e.target.value)}/>
               {searchQuery && <button type="button" onClick={()=>setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5"/></button>}
             </div>
           </div>
@@ -928,51 +942,46 @@ export default function ScheduleView() {
             <div className="flex gap-4 items-start">
 
               {/* ── Staff Pool (LEFT) ──────────────────────────────────── */}
-              <div className="w-[220px] flex-shrink-0 print:hidden">
-                <div className="rounded-xl bg-card border border-border/50 shadow-sm overflow-hidden sticky top-6">
-                  <div className="p-3 border-b border-border bg-muted/30 space-y-2">
+              <div className="w-[240px] flex-shrink-0 print:hidden">
+                <div className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden sticky top-6">
+                  <div className="px-3.5 pt-3.5 pb-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">Staff Pool</h3>
-                      <span className="text-[10px] text-muted-foreground">{employees.length}</span>
+                      <h3 className="text-xs font-bold text-gray-800 uppercase tracking-widest">Staff Pool</h3>
+                      <span className="text-[10px] font-medium text-gray-400">{employees.length} members</span>
                     </div>
+                    <p className="text-[10px] text-gray-400 leading-none">Drag staff to assign duties</p>
                     <div className="relative">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"/>
-                      <Input placeholder="Search staff..." className="pl-7 h-7 text-xs" value={staffSearch} onChange={(e)=>setStaffSearch(e.target.value)}/>
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none"/>
+                      <Input placeholder="Search staff..." className="pl-7 h-8 text-xs bg-gray-50 border-gray-200" value={staffSearch} onChange={(e)=>setStaffSearch(e.target.value)}/>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Drag staff to assign duties</p>
                   </div>
                   <ScrollArea style={{ height:"calc(100vh - 220px)" }}>
-                    <div className="p-2 space-y-3">
-                      {/* Render in rank order: known ranks first, then others */}
+                    <div className="px-2.5 pb-2.5 space-y-3">
                       {poolRankEntries.map(({ rank, list }, rankIdx)=>{
-                        // Exact match first, then index cycling — mirrors ReactJS FALLBACK_CLASSES logic
                         const rankCls = RANK_COLORS[rank] ?? RANK_PALETTE[rankIdx % RANK_PALETTE.length];
-                        const badge = rs(rankOf(rank));
                         return (
                           <div key={rank}>
                             <div className="flex items-center gap-1.5 mb-1.5 px-1">
-                              <div className={cn("h-2 w-2 rounded-full",rankCls.dot)}/>
-                              <span className={cn("text-[10px] font-bold uppercase tracking-wider",rankCls.text)}>{rank}</span>
-                              <span className="text-[9px] text-muted-foreground ml-auto">{list.length}</span>
+                              <div className={cn("h-2 w-2 rounded-full flex-shrink-0",rankCls.dot)}/>
+                              <span className={cn("text-[10px] font-bold uppercase tracking-widest",rankCls.text)}>{rank}</span>
+                              <span className="text-[9px] font-medium text-gray-400 ml-auto">{list.length}</span>
                             </div>
                             <div className="space-y-1">
                               {list.map((emp)=>(
                                 <div key={emp.id} draggable onDragStart={handleDragStart(emp.id) as React.DragEventHandler<HTMLDivElement>}
-                                  className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg bg-card border border-l-[3px] cursor-grab active:cursor-grabbing hover:shadow-md hover:border-border transition-all group",rankCls.border)}>
-                                  <GripVertical className="h-3 w-3 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors flex-shrink-0"/>
+                                  className={cn("flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white border border-gray-100 border-l-[3px] cursor-grab active:cursor-grabbing hover:bg-gray-50 hover:border-gray-300 hover:shadow-md hover:-translate-y-px transition-all group",rankCls.border)}>
                                   <Avatar className="h-6 w-6 flex-shrink-0">
                                     <AvatarImage src={emp.photoUrl} alt={emp.name}/>
                                     <AvatarFallback className={cn("text-[9px] font-bold",rankCls.bg,rankCls.text)}>{emp.avatar}</AvatarFallback>
                                   </Avatar>
-                                  <span className="text-[11px] font-medium text-foreground truncate flex-1">{emp.name.split(" ").slice(-1)[0]}</span>
-                                  <span className={cn("text-[8px] font-semibold px-1 py-0 rounded border flex-shrink-0",rankCls.bg,rankCls.text,rankCls.border)}>{badge}</span>
+                                  <span className="text-[11px] font-medium text-gray-700 truncate flex-1">{emp.name}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
                         );
                       })}
-                      {filteredPool.length===0&&<p className="text-xs text-center text-muted-foreground py-6">No staff found.</p>}
+                      {filteredPool.length===0&&<p className="text-xs text-center text-gray-400 py-6">No staff found.</p>}
                     </div>
                   </ScrollArea>
                 </div>
@@ -1033,13 +1042,13 @@ export default function ScheduleView() {
 
       {/* ── Extend Schedule Dialog (DayPicker calendar) ────────────────── */}
       <Dialog open={extendOpen} onOpenChange={(o)=>{if (!o){setExtendOpen(false);setExtendEnd(undefined);}}}>
-        <DialogContent className="sm:max-w-xs">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Extend Schedule</DialogTitle>
             <DialogDescription>Pick the new end date. The schedule continues from its current last day{schedule?.endDate?` (${schedule.endDate})`:""}.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center">
+          <div className="flex justify-center w-full overflow-hidden">
             <DayPicker
               mode="single"
               selected={extendEnd}
@@ -1049,6 +1058,7 @@ export default function ScheduleView() {
               modifiers={{ anchor:extendStart?[extendStart]:[] }}
               modifiersClassNames={{ anchor:"rdp-day_selected" }}
               numberOfMonths={1}
+              classNames={{ root:"rdp w-full", month:"rdp-month w-full", table:"rdp-table w-full", head_row:"rdp-head_row flex w-full", row:"rdp-row flex w-full mt-1", head_cell:"rdp-head_cell flex-1 text-center text-xs font-medium text-muted-foreground", cell:"rdp-cell flex-1 text-center" }}
             />
           </div>
           {extendEnd && <p className="text-xs text-center text-muted-foreground">Extending to <strong>{extendEnd.toLocaleDateString()}</strong></p>}
@@ -1061,7 +1071,7 @@ export default function ScheduleView() {
 
       {/* ── Create New Schedule Dialog (DayPicker range) ───────────────── */}
       <Dialog open={createOpen} onOpenChange={(o)=>{if (!o){setCreateOpen(false);setCreateRange(undefined);}}}>
-        <DialogContent className="sm:max-w-xs">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Create New Schedule</DialogTitle>
             <DialogDescription>
@@ -1069,7 +1079,7 @@ export default function ScheduleView() {
               {maxEndDate&&<> Dates up to <strong>{maxEndDate.toLocaleDateString()}</strong> are already scheduled.</>}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center">
+          <div className="flex justify-center w-full overflow-hidden">
             <DayPicker
               mode="range"
               selected={createRange}
@@ -1077,6 +1087,7 @@ export default function ScheduleView() {
               disabled={(d)=>!!maxEndDate&&d.getTime()<=maxEndDate.getTime()}
               defaultMonth={maxEndDate?new Date(maxEndDate.getFullYear(),maxEndDate.getMonth()+1,1):undefined}
               numberOfMonths={1}
+              classNames={{ root:"rdp w-full", month:"rdp-month w-full", table:"rdp-table w-full", head_row:"rdp-head_row flex w-full", row:"rdp-row flex w-full mt-1", head_cell:"rdp-head_cell flex-1 text-center text-xs font-medium text-muted-foreground", cell:"rdp-cell flex-1 text-center" }}
             />
           </div>
           {createRange?.from&&createRange?.to&&<p className="text-xs text-center text-muted-foreground"><strong>{createRange.from.toLocaleDateString()}</strong> → <strong>{createRange.to.toLocaleDateString()}</strong></p>}
@@ -1196,19 +1207,6 @@ function ShiftGrid({
 
   return (
     <Card className="p-3 overflow-hidden min-w-0">
-      {/* Document title block */}
-      {(schedule.title||(schedule.startDate&&schedule.endDate))&&(
-        <div className="px-4 py-4 text-center border-b border-border mb-2 rounded-t-xl">
-          {schedule.title&&<h2 className="text-xl font-bold text-foreground tracking-tight">{schedule.title}</h2>}
-          <p className="text-sm font-semibold text-muted-foreground mt-0.5">(Departmental On-Call Rota)</p>
-          {schedule.startDate&&schedule.endDate&&(
-            <p className="text-sm font-semibold text-foreground/80 mt-1">
-              ({new Date(schedule.startDate).toLocaleDateString(undefined,{month:"long",day:"2-digit",year:"numeric"})} – {new Date(schedule.endDate).toLocaleDateString(undefined,{month:"long",day:"2-digit",year:"numeric"})})
-            </p>
-          )}
-        </div>
-      )}
-
       <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-sm border-separate border-spacing-0 min-w-[900px]">
           <thead>
@@ -1289,7 +1287,7 @@ function ShiftGrid({
                                   onDragOver={(e)=>{e.preventDefault();onDragOver(k);}}
                                   onDragLeave={onDragLeave}
                                   onDrop={onDrop(k,false) as React.DragEventHandler<HTMLButtonElement>}
-                                  className={cn("w-full h-10 rounded-lg border-2 border-dashed flex items-center justify-center transition-all",isOver?"border-primary/60 bg-primary/5 scale-[1.02]":"border-border/40 hover:border-primary/30 hover:bg-muted/30")}>
+                                  className={cn("w-full h-10 rounded-lg border-2 border-dashed flex items-center justify-center transition-all",isOver?"border-primary/80 bg-primary/10 scale-[1.02]":"border-border/40 hover:border-primary/60 hover:bg-gray-100")}>
                                   <span className="text-[11px] text-muted-foreground/50 font-medium select-none">{isOver?"Drop":"+"}</span>
                                 </button>
                               </PopoverTrigger>
