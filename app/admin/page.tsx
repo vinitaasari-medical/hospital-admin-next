@@ -239,26 +239,10 @@ const AdminDashboard = () => {
                 Overview
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <AppStatCard
-                  label="Users"
-                  value={loadingStats ? "—" : fmt(stats?.users ?? 0)}
-                  icon={Users}
-                />
-                <AppStatCard
-                  label="Admins"
-                  value={loadingStats ? "—" : fmt(stats?.admins ?? 0)}
-                  icon={ShieldPlus}
-                />
-                <AppStatCard
-                  label="Broadcasts"
-                  value={loadingStats ? "—" : fmt(stats?.broadcasts ?? 0)}
-                  icon={Megaphone}
-                />
-                <AppStatCard
-                  label="Departments"
-                  value={loadingStats ? "—" : fmt(stats?.departments ?? 0)}
-                  icon={Briefcase}
-                />
+                <AppStatCard label="Users" value={loadingStats ? "—" : fmt(stats?.users ?? 0)} icon={Users} />
+                <AppStatCard label="Admins" value={loadingStats ? "—" : fmt(stats?.admins ?? 0)} icon={ShieldPlus} />
+                <AppStatCard label="Broadcasts" value={loadingStats ? "—" : fmt(stats?.broadcasts ?? 0)} icon={Megaphone} />
+                <AppStatCard label="Departments" value={loadingStats ? "—" : fmt(stats?.departments ?? 0)} icon={Briefcase} />
               </div>
             </section>
 

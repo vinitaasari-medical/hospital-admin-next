@@ -106,14 +106,18 @@ export default function ByEmployeeView({
                   return (
                     <tr key={`bev-emp-${emp.id}`} className="hover:bg-muted/10 transition-colors">
                       {/* Employee name cell */}
-                      <td className="sticky left-0 z-10 bg-card px-3 py-2 border-b border-r border-border">
-                        <div className="flex items-center gap-2">
-                          <div className={cn("h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden", erc.bg, erc.text)}>
-                            {emp.photoUrl ? <img src={emp.photoUrl} alt={emp.name} className="h-full w-full object-cover" /> : <span>{emp.avatar}</span>}
+                      <td className="sticky left-0 z-10 bg-card px-3 py-2.5 border-b border-r border-border">
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative flex-shrink-0">
+                            <div className={cn("h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden ring-2 ring-background shadow-sm", erc.bg, erc.text)}>
+                              {emp.photoUrl ? <img src={emp.photoUrl} alt={emp.name} className="h-full w-full object-cover" /> : <span className="text-[11px] font-bold">{emp.avatar}</span>}
+                            </div>
+                            <span className={cn("absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background", erc.bg)}/>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold text-foreground truncate max-w-[120px]">{emp.name}</p>
-                            <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border", erc.bg, erc.text, erc.border)}>
+                            <p className="text-xs font-bold text-foreground truncate max-w-[120px] leading-tight">{emp.name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate max-w-[120px] leading-none mt-0.5">{emp.role}</p>
+                            <span className={cn("text-[8px] font-bold px-1.5 py-0.5 rounded border mt-1 inline-block leading-none uppercase tracking-wide", erc.bg, erc.text, erc.border)}>
                               {roleShort?.[emp.role] || emp.role?.slice(0, 3).toUpperCase()}
                             </span>
                           </div>
@@ -147,25 +151,31 @@ export default function ByEmployeeView({
                                     <div
                                       key={c.key}
                                       title={`${c.shiftName} • ${c.dutyTitle}${c.areaName ? ` • ${c.areaName}` : ""} • ${c.leafLabel}`}
-                                      className={cn("relative group rounded border text-[9px] overflow-hidden", sc.cellBg, sc.border, isSearching && !chipMatch && "opacity-30")}
+                                      className={cn("relative group rounded-lg border overflow-hidden shadow-sm", sc.cellBg, sc.border, isSearching && !chipMatch && "opacity-30")}
                                     >
                                       <div className="flex items-stretch">
-                                        <div className={cn("w-3 flex-shrink-0 flex flex-col items-center justify-center py-0.5", sc.dot)}>
-                                          <span className="text-[8px] font-bold text-white leading-none">{c.shiftLetter}</span>
+                                        {/* Shift accent bar */}
+                                        <div className={cn("w-[14px] flex-shrink-0 flex flex-col items-center justify-center py-1", sc.dot)}>
+                                          <span className="text-[9px] font-black text-white leading-none">{c.shiftLetter}</span>
                                         </div>
-                                        <div className="flex-1 px-1 py-0.5 min-w-0">
-                                          <p className={cn("font-semibold truncate leading-none", sc.dutyText)}>{c.dutyTitle}</p>
-                                          {c.areaName && <p className="flex items-center gap-0.5 text-muted-foreground leading-none mt-0.5 truncate"><MapPin className="h-2 w-2" />{c.areaName}</p>}
-                                          <p className="text-muted-foreground/70 leading-none truncate">{c.leafLabel}</p>
+                                        {/* Content */}
+                                        <div className="flex-1 px-1.5 py-1 min-w-0">
+                                          <p className={cn("text-[10px] font-bold truncate leading-tight", sc.dutyText)}>{c.dutyTitle}</p>
+                                          {c.areaName && (
+                                            <p className="flex items-center gap-0.5 text-[9px] text-muted-foreground leading-none mt-0.5 truncate">
+                                              <MapPin className="h-2 w-2 flex-shrink-0" />{c.areaName}
+                                            </p>
+                                          )}
+                                          <p className="text-[9px] text-muted-foreground/80 leading-none mt-0.5 truncate font-medium">{c.leafLabel}</p>
                                         </div>
                                       </div>
                                       {!isPast && (
                                         <button
                                           type="button"
                                           onClick={(e) => { e.stopPropagation(); onClearAssign?.(c.key); }}
-                                          className="absolute top-0 right-0 h-3.5 w-3.5 rounded-bl bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                          className="absolute top-0 right-0 h-4 w-4 rounded-bl-lg bg-destructive/90 text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
-                                          <X className="h-2 w-2" />
+                                          <X className="h-2.5 w-2.5" />
                                         </button>
                                       )}
                                     </div>

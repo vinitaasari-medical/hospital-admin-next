@@ -152,32 +152,53 @@ export default function DutyPickerDialog({
 
         {/* Apply to section — only for draft */}
         {!isPublished && (
-          <div className="space-y-2 border-t border-border pt-3">
-            <p className="text-xs font-semibold text-foreground">Apply to</p>
-            <div className="flex flex-wrap gap-1">
-              {[
-                { label: "Just this day", action: () => setApplyDates(new Set([date?.key ?? ""].filter(isFuture))) },
-                { label: "All days", action: () => setApplyDates(new Set(visibleDates.map((d) => d.key).filter(isFuture))) },
-                { label: `Every ${WEEKDAY_NAME[weekdayOf(date?.key ?? "")]}`, action: () => { const w = weekdayOf(date?.key ?? ""); setApplyDates(new Set(visibleDates.filter((d) => weekdayOf(d.key) === w && isFuture(d.key)).map((d) => d.key))); } },
-                { label: "Weekdays", action: () => setApplyDates(new Set(visibleDates.filter((d) => { const w = weekdayOf(d.key); return (w >= 1 && w <= 5) && isFuture(d.key); }).map((d) => d.key))) },
-                { label: "Weekends", action: () => setApplyDates(new Set(visibleDates.filter((d) => { const w = weekdayOf(d.key); return (w === 0 || w === 6) && isFuture(d.key); }).map((d) => d.key))) },
-              ].map(({ label, action }) => (
-                <button key={label} type="button" onClick={action} className="text-[10px] px-2 py-0.5 rounded-full border border-border hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-colors text-muted-foreground">
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {visibleDates.map((d) => {
-                const on = applyDates.has(d.key);
-                const past = !isFuture(d.key);
-                return (
-                  <button key={d.key} type="button" disabled={past} onClick={() => toggleDate(d.key)} className={cn("flex flex-col items-center px-2 py-1 rounded-md text-center min-w-[34px] text-[10px] border transition-all", past ? "opacity-30 cursor-not-allowed border-transparent bg-muted/20" : on ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/40 hover:bg-muted/30")}>
-                    <strong className="text-xs leading-none">{d.dateNum}</strong>
-                    <span className="leading-none mt-0.5">{d.dayLabel}</span>
+          <div className="space-y-3 border-t border-border pt-3">
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Quick select</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: "Just this day", action: () => setApplyDates(new Set([date?.key ?? ""].filter(isFuture))) },
+                  { label: "All days", action: () => setApplyDates(new Set(visibleDates.map((d) => d.key).filter(isFuture))) },
+                  { label: `Every ${WEEKDAY_NAME[weekdayOf(date?.key ?? "")]}`, action: () => { const w = weekdayOf(date?.key ?? ""); setApplyDates(new Set(visibleDates.filter((d) => weekdayOf(d.key) === w && isFuture(d.key)).map((d) => d.key))); } },
+                  { label: "Weekdays", action: () => setApplyDates(new Set(visibleDates.filter((d) => { const w = weekdayOf(d.key); return (w >= 1 && w <= 5) && isFuture(d.key); }).map((d) => d.key))) },
+                  { label: "Weekends", action: () => setApplyDates(new Set(visibleDates.filter((d) => { const w = weekdayOf(d.key); return (w === 0 || w === 6) && isFuture(d.key); }).map((d) => d.key))) },
+                ].map(({ label, action }) => (
+                  <button key={label} type="button" onClick={action}
+                    className="text-[11px] px-2.5 py-1 rounded-full border border-border/70 text-muted-foreground font-medium hover:border-accent/50 hover:bg-accent/10 hover:text-accent transition-all">
+                    {label}
                   </button>
-                );
-              })}
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Select dates</p>
+                {applyDates.size > 0 && (
+                  <span className="text-[10px] font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded-full border border-accent/20">
+                    {applyDates.size} selected
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {visibleDates.map((d) => {
+                  const on = applyDates.has(d.key);
+                  const past = !isFuture(d.key);
+                  return (
+                    <button key={d.key} type="button" disabled={past} onClick={() => toggleDate(d.key)}
+                      className={cn(
+                        "flex flex-col items-center py-1.5 px-0.5 rounded-lg text-center transition-all border select-none",
+                        past
+                          ? "opacity-25 cursor-not-allowed border-transparent"
+                          : on
+                            ? "bg-accent text-accent-foreground border-accent shadow-sm"
+                            : "border-border/60 text-foreground hover:border-accent/40 hover:bg-accent/10 hover:text-accent"
+                      )}>
+                      <strong className="text-[12px] leading-none font-bold">{d.dateNum}</strong>
+                      <span className="text-[8px] leading-none mt-0.5 font-medium opacity-80">{d.dayLabel}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -185,11 +206,17 @@ export default function DutyPickerDialog({
         {/* Footer */}
         <div className="flex items-center justify-between pt-2 border-t border-border">
           {!isPublished && (
-            <span className="text-xs text-muted-foreground">{applyDates.size} day{applyDates.size !== 1 ? "s" : ""} selected</span>
+            <span className="text-[11px] text-muted-foreground font-medium">
+              {applyDates.size === 0 ? "No days selected" : `${applyDates.size} day${applyDates.size !== 1 ? "s" : ""} selected`}
+            </span>
           )}
           <div className="flex gap-2 ml-auto">
-            <button type="button" onClick={() => onOpenChange(false)} className="px-3 py-1.5 text-sm rounded-md border border-border hover:bg-muted transition-colors">Cancel</button>
-            <button type="button" onClick={handleAdd} disabled={!selected || (!isPublished && applyDates.size === 0)} className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">
+            <button type="button" onClick={() => onOpenChange(false)}
+              className="px-3 py-1.5 text-sm rounded-lg border border-border/70 bg-background hover:bg-muted/60 text-foreground transition-colors font-medium">
+              Cancel
+            </button>
+            <button type="button" onClick={handleAdd} disabled={!selected || (!isPublished && applyDates.size === 0)}
+              className="px-3 py-1.5 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-medium shadow-sm">
               {isPublished ? "Add" : "Assign"}
             </button>
           </div>

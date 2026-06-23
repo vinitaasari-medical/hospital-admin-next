@@ -306,13 +306,14 @@ const PTTChannels = () => {
             <p className="text-sm text-muted-foreground mt-1">Create, configure, and manage PTT communication channels</p>
           </motion.div>
 
-          {/* Stats */}
+          {/* Stats — hidden
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard title="Total Channels" value={String(channels.length)} change={`${channels.filter(c => c.enabled).length} active`} changeType="positive" icon={Radio} />
             <StatCard title="Active Speakers" value={String(channels.reduce((s, c) => s + c.activeSpeakers, 0))} change="Real-time" changeType="neutral" icon={Mic} />
             <StatCard title="Connected Users" value={String(channels.reduce((s, c) => s + c.connectedCount, 0))} change="Across all channels" changeType="positive" icon={Users} />
             <StatCard title="Emergency Channels" value={String(channels.filter(c => c.priority === "emergency").length)} change="Override enabled" changeType="neutral" icon={AlertTriangle} />
           </div>
+          */}
 
           {/* Toolbar */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6">

@@ -1,7 +1,7 @@
 'use client';
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { X, Menu, ChevronDown, Check, User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { X, Menu, ChevronDown, Check, User, PanelLeftClose, PanelLeftOpen, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import {
@@ -27,13 +27,18 @@ const DashboardSidebar = (_props: DashboardSidebarProps = {}) => {
   const { scope, scopes, switchScope } = useScope();
   const title = "MedicalCircles";
 
-  const { getUser, getUserEmail } = useAuth();
+  const { getUser, getUserEmail, logout } = useAuth();
   const [authUser, setAuthUser] = useState<ReturnType<typeof getUser>>(null);
   const [displayEmail, setDisplayEmail] = useState("");
 
   useEffect(() => {
-    setAuthUser(getUser());
-    setDisplayEmail(getUserEmail() ?? "");
+    const sync = () => {
+      setAuthUser(getUser());
+      setDisplayEmail(getUserEmail() ?? "");
+    };
+    sync();
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
   }, []);
 
   const displayName = authUser
@@ -42,6 +47,7 @@ const DashboardSidebar = (_props: DashboardSidebarProps = {}) => {
   const userInitials = authUser
     ? `${authUser.first_name?.[0] ?? ""}${authUser.last_name?.[0] ?? ""}`.toUpperCase() || "A"
     : "A";
+  const userPhotoUrl = authUser?.profile_url || "";
 
   const isPTT = pathname.startsWith("/admin/ptt");
   const items: SidebarItem[] = isPTT
@@ -153,6 +159,29 @@ const DashboardSidebar = (_props: DashboardSidebarProps = {}) => {
       <TooltipProvider delayDuration={0}>
         <nav className={cn("flex-1 space-y-1 overflow-y-auto", isCollapsed ? "px-2" : "px-3")}>
           {items.map((item) => renderItem(item, isCollapsed))}
+          <div className="pt-1">
+            {isCollapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => logout()}
+                    className="w-full flex items-center justify-center px-2.5 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8}>Logout</TooltipContent>
+              </Tooltip>
+            ) : (
+              <button
+                onClick={() => logout()}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            )}
+          </div>
         </nav>
       </TooltipProvider>
 
@@ -164,8 +193,10 @@ const DashboardSidebar = (_props: DashboardSidebarProps = {}) => {
             isCollapsed ? "px-2 py-2 justify-center" : "px-3 py-2"
           )}
         >
-          <div className="h-8 w-8 rounded-full bg-sidebar-primary flex items-center justify-center text-xs font-semibold text-sidebar-primary-foreground flex-shrink-0">
-            {userInitials}
+          <div className="h-8 w-8 rounded-full bg-sidebar-primary flex items-center justify-center text-xs font-semibold text-sidebar-primary-foreground flex-shrink-0 overflow-hidden">
+            {userPhotoUrl
+              ? <img src={userPhotoUrl} alt={displayName} className="h-full w-full object-cover" />
+              : userInitials}
           </div>
           {!isCollapsed && (
             <>

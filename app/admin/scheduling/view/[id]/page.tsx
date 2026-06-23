@@ -7,7 +7,7 @@ import { DayPicker, type DateRange as DayPickerDateRange } from "react-day-picke
 import "react-day-picker/dist/style.css";
 import {
   ArrowLeft, X, Sunrise, Sun, Moon, MapPin,
-  FileSpreadsheet, Printer, Send, Pencil, Undo2, FileDown,
+  FileSpreadsheet, Printer, Send, Pencil, FileDown,
   Search, CalendarDays, Plus, LayoutTemplate, FilePlus2,
   LayoutGrid, Users,
 } from "lucide-react";
@@ -471,7 +471,12 @@ export default function ScheduleView() {
     } else {
       // Multi-assign
       const assignmentIds = keys.map((k) => coverageMap[k]).filter(Boolean);
-      if (assignmentIds.length===0) { return; }
+      console.log("[handleAssign] multi", { keys, assignmentIds, coverageMapSize:Object.keys(coverageMap).length });
+      if (assignmentIds.length===0) {
+        console.warn("[handleAssign] No coverage IDs found for keys:", keys);
+        toast({ title:"Unable to assign", description:"No valid slots found. Please refresh and try again.", variant:"destructive" });
+        return;
+      }
 
       if (isPublished) {
         const todayKeys = keys.filter((k) => k.split("::")[0]===todayKey);
@@ -771,7 +776,7 @@ export default function ScheduleView() {
     schedule.scheduleDates.forEach((dt,ri)=>{ const tr=document.createElement("tr"); tr.style.background=ri%2===0?"#ffffff":"#f9fafb"; const dateTd=document.createElement("td"); dateTd.innerHTML=`<div style="font-size:7px;color:#6b7280;font-weight:600;">${dt.dayLabel}</div><div style="font-size:12px;font-weight:700;color:#00172d;">${dt.dateNum}</div>`; dateTd.style.cssText="text-align:center;padding:3px;border:1px solid #e2e8f0;background:#f8fafc;vertical-align:middle;"; tr.appendChild(dateTd);
     schedule.shifts.forEach((s)=>{ const mkTd=(text:string,css:string)=>{const t=document.createElement("td");t.textContent=text;t.style.cssText=css;return t;}; if (s.duties.length===0){tr.appendChild(mkTd("","border:1px solid #e2e8f0;padding:4px;"));return;} s.duties.forEach((d)=>{ dutyLeaves(d).forEach((lf)=>{ const emp=getEmp(schedule.assignments[mkCellKey(dt.key,d.id,lf.id)]); tr.appendChild(mkTd(emp?emp.name:"",`text-align:center;padding:4px 5px;border:1px solid #e2e8f0;font-size:9px;color:${emp?"#111827":"#d1d5db"};`)); }); }); }); tbody.appendChild(tr); });
     tbl.appendChild(tbody); wrap.appendChild(tbl); document.body.appendChild(wrap);
-    let tableCanvas; try { tableCanvas=await html2canvas(wrap,{scale:2,backgroundColor:"#ffffff",logging:false}); } finally { document.body.removeChild(wrap); }
+    let tableCanvas: Awaited<ReturnType<typeof html2canvas>>; try { tableCanvas=await html2canvas(wrap,{scale:2,backgroundColor:"#ffffff",logging:false}); } finally { document.body.removeChild(wrap); }
     const HEADER_H=28,FOOTER_H=8,MARGIN=10;
     const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
     const pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight(),availW=pageW-MARGIN*2,availH=pageH-HEADER_H-FOOTER_H-MARGIN;
@@ -1261,15 +1266,16 @@ function ShiftGrid({
                               onDragOver={!isPast?(e)=>{e.preventDefault();onDragOver(k);}:undefined}
                               onDragLeave={!isPast?onDragLeave:undefined}
                               onDrop={!isPast?onDrop(k,isPast) as React.DragEventHandler<HTMLDivElement>:undefined}
-                              className={cn("group relative flex items-center gap-1.5 p-1.5 rounded-lg bg-card border transition-all",isPast?"cursor-default":"cursor-grab active:cursor-grabbing hover:shadow-sm",rankCls.border,(isOver||pickerKey===k)&&"ring-2 ring-primary")}
+                              className={cn("group relative flex items-center gap-2 px-2 py-1.5 rounded-xl bg-card border-2 transition-all",isPast?"cursor-default":"cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-px",rankCls.border,(isOver||pickerKey===k)&&"ring-2 ring-accent shadow-md")}
                             >
-                              <Avatar className="h-7 w-7 flex-shrink-0 ring-2 ring-background">
+                              <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-background shadow-sm">
                                 <AvatarImage src={emp.photoUrl} alt={emp.name}/>
-                                <AvatarFallback className={cn("text-[9px] font-bold",rankCls.bg,rankCls.text)}>{emp.avatar}</AvatarFallback>
+                                <AvatarFallback className={cn("text-[10px] font-bold",rankCls.bg,rankCls.text)}>{emp.avatar}</AvatarFallback>
                               </Avatar>
                               <div className="min-w-0 flex-1">
-                                <p className="text-[10px] font-semibold text-foreground leading-tight truncate">{emp.name}</p>
-                                <span className={cn("text-[7px] font-bold px-1 py-0 rounded border uppercase tracking-wider mt-0.5 inline-block",rankCls.bg,rankCls.text,rankCls.border)}>{rs(rankOf(emp.rank))}</span>
+                                <p className="text-[11px] font-bold text-foreground leading-tight truncate">{emp.name}</p>
+                                <p className="text-[9px] text-muted-foreground leading-none truncate mt-0.5">{emp.role||emp.rank}</p>
+                                <span className={cn("text-[7px] font-bold px-1 py-0 rounded border uppercase tracking-wider mt-0.5 inline-block leading-tight",rankCls.bg,rankCls.text,rankCls.border)}>{rs(rankOf(emp.rank))}</span>
                               </div>
                               {!isPast&&(
                                 <button onClick={(e)=>{e.stopPropagation();onRemove(k);}} className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
@@ -1291,54 +1297,145 @@ function ShiftGrid({
                                   <span className="text-[11px] text-muted-foreground/50 font-medium select-none">{isOver?"Drop":"+"}</span>
                                 </button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-72 p-0" align="start" sideOffset={6}>
+                              <PopoverContent className="w-[340px] p-0 shadow-xl border border-border/80 overflow-hidden rounded-2xl" align="start" sideOffset={8}>
                                 {pickerStep===1 ? (
-                                  <div>
-                                    <div className="p-2 border-b border-border">
-                                      <div className="relative">
-                                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"/>
-                                        <input autoFocus className="w-full pl-7 pr-7 h-8 text-sm bg-muted/30 rounded-md border-0 outline-none placeholder:text-muted-foreground/60 focus:ring-1 focus:ring-primary/30 transition" placeholder="Search by name or role..." value={pickerQuery} onChange={(ev)=>onSetPickerQuery(ev.target.value)}/>
-                                        {pickerQuery&&<button type="button" onClick={()=>onSetPickerQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"><X className="h-3 w-3"/></button>}
+                                  /* ── Step 1: Member selection ── */
+                                  <div className="flex flex-col">
+                                    {/* Header */}
+                                    <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-br from-primary/[0.06] to-accent/[0.06] border-b border-border/70">
+                                      <div>
+                                        <p className="text-sm font-semibold text-foreground leading-none">Assign Member</p>
+                                        <p className="text-[11px] text-muted-foreground mt-1">Select a staff member to assign</p>
                                       </div>
+                                      <button type="button" onClick={onClosePicker} className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-muted/70 transition-colors text-muted-foreground hover:text-foreground">
+                                        <X className="h-3.5 w-3.5"/>
+                                      </button>
                                     </div>
-                                    <ScrollArea className="h-48">
-                                      <div className="p-1.5 space-y-0.5">
-                                        {filteredPickerEmps.length===0&&<p className="text-xs text-center text-muted-foreground py-6">No staff matches.</p>}
+                                    {/* Search */}
+                                    <div className="px-3 pt-3 pb-2">
+                                      <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"/>
+                                        <input autoFocus className="w-full pl-9 pr-8 h-9 text-sm bg-muted/50 rounded-lg border border-border/60 focus:border-accent/60 focus:ring-2 focus:ring-accent/15 outline-none placeholder:text-muted-foreground/50 transition-all" placeholder="Search by name or role..." value={pickerQuery} onChange={(ev)=>onSetPickerQuery(ev.target.value)}/>
+                                        {pickerQuery&&<button type="button" onClick={()=>onSetPickerQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"><X className="h-3.5 w-3.5"/></button>}
+                                      </div>
+                                      <p className="text-[10px] text-muted-foreground mt-1.5 pl-0.5">{filteredPickerEmps.length} member{filteredPickerEmps.length!==1?"s":""} available</p>
+                                    </div>
+                                    {/* List */}
+                                    <ScrollArea className="h-52">
+                                      <div className="px-2 pb-2 space-y-0.5">
+                                        {filteredPickerEmps.length===0&&(
+                                          <div className="flex flex-col items-center justify-center py-8 gap-2">
+                                            <div className="h-10 w-10 rounded-full bg-muted/60 flex items-center justify-center">
+                                              <Users className="h-5 w-5 text-muted-foreground/40"/>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">No staff matches your search.</p>
+                                          </div>
+                                        )}
                                         {filteredPickerEmps.map((e2)=>{ const rk=rc(rankOf(e2.rank)); return (
-                                          <button key={e2.id} type="button" onClick={()=>onSelectEmp(e2.id)} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md hover:bg-muted/60 transition-colors text-left">
-                                            <Avatar className="h-7 w-7 flex-shrink-0"><AvatarImage src={e2.photoUrl} alt={e2.name}/><AvatarFallback className={cn("text-[9px] font-bold",rk.bg,rk.text)}>{e2.avatar}</AvatarFallback></Avatar>
-                                            <div className="min-w-0 flex-1"><p className="text-sm font-medium text-foreground truncate">{e2.name}</p><p className="text-[10px] text-muted-foreground truncate">{e2.role||e2.rank}</p></div>
-                                            <span className={cn("text-[8px] font-bold px-1 py-0.5 rounded border flex-shrink-0",rk.bg,rk.text,rk.border)}>{rs(rankOf(e2.rank))}</span>
+                                          <button key={e2.id} type="button" onClick={()=>onSelectEmp(e2.id)} className="w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl hover:bg-accent/10 hover:border-accent/20 border border-transparent group transition-all text-left">
+                                            <div className="relative flex-shrink-0">
+                                              <Avatar className="h-9 w-9 ring-2 ring-background shadow-sm">
+                                                <AvatarImage src={e2.photoUrl} alt={e2.name}/>
+                                                <AvatarFallback className={cn("text-[10px] font-bold",rk.bg,rk.text)}>{e2.avatar}</AvatarFallback>
+                                              </Avatar>
+                                              <span className={cn("absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background",rk.bg)}/>
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                              <p className="text-sm font-semibold text-foreground leading-tight truncate group-hover:text-accent transition-colors">{e2.name}</p>
+                                              <p className="text-[11px] text-muted-foreground truncate mt-0.5">{e2.role||e2.rank}</p>
+                                            </div>
+                                            <span className={cn("text-[8px] font-bold px-1.5 py-0.5 rounded-md border flex-shrink-0 uppercase tracking-wide",rk.bg,rk.text,rk.border)}>{rs(rankOf(e2.rank))}</span>
                                           </button>
                                         ); })}
                                       </div>
                                     </ScrollArea>
                                   </div>
                                 ) : (
-                                  /* Step 2: presets + date chips */
-                                  <div>
-                                    <div className="flex items-center gap-2 p-2.5 border-b border-border">
-                                      <button type="button" onClick={()=>setPickerStep(1)} className="text-[11px] text-primary hover:underline flex-shrink-0">← change</button>
-                                      {getSelEmp(pickerEmpId)&&(()=>{ const selEmp=getSelEmp(pickerEmpId)!; const rk=rc(rankOf(selEmp.rank)); return (<><Avatar className="h-7 w-7 flex-shrink-0"><AvatarImage src={selEmp.photoUrl} alt={selEmp.name}/><AvatarFallback className={cn("text-[9px] font-bold",rk.bg,rk.text)}>{selEmp.avatar}</AvatarFallback></Avatar><p className="text-sm font-semibold text-foreground truncate">{selEmp.name}</p></>); })()}
+                                  /* ── Step 2: Date selection ── */
+                                  <div className="flex flex-col">
+                                    {/* Selected member header */}
+                                    <div className="flex items-center gap-2.5 px-4 py-3 bg-gradient-to-br from-primary/[0.06] to-accent/[0.06] border-b border-border/70">
+                                      <button type="button" onClick={()=>setPickerStep(1)} className="flex items-center gap-1 text-[11px] font-medium text-accent hover:text-accent/70 transition-colors flex-shrink-0">
+                                        <ArrowLeft className="h-3 w-3"/> Change
+                                      </button>
+                                      <span className="h-4 w-px bg-border flex-shrink-0"/>
+                                      {getSelEmp(pickerEmpId)&&(()=>{ const selEmp=getSelEmp(pickerEmpId)!; const rk=rc(rankOf(selEmp.rank)); return (
+                                        <>
+                                          <Avatar className="h-7 w-7 flex-shrink-0 ring-2 ring-background shadow-sm">
+                                            <AvatarImage src={selEmp.photoUrl} alt={selEmp.name}/>
+                                            <AvatarFallback className={cn("text-[9px] font-bold",rk.bg,rk.text)}>{selEmp.avatar}</AvatarFallback>
+                                          </Avatar>
+                                          <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-semibold text-foreground leading-none truncate">{selEmp.name}</p>
+                                            <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{selEmp.role||selEmp.rank}</p>
+                                          </div>
+                                        </>
+                                      ); })()}
                                     </div>
-                                    <div className="p-2 border-b border-border">
-                                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Apply to</p>
-                                      <div className="flex flex-wrap gap-1">
-                                        {[{label:"Just this day",preset:"just"},{label:"All days",preset:"all"},{label:`Every ${WEEKDAY_NAME[weekdayOf(pickerKey?.split("::")[0]??"")]}`,preset:"every"},{label:"Weekdays",preset:"weekdays"},{label:"Weekends",preset:"weekends"}].map(({label,preset})=>(
-                                          <button key={preset} type="button" onClick={()=>onApplyPreset(preset)} className="text-[10px] px-2 py-0.5 rounded-full border border-border hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-colors text-muted-foreground">{label}</button>
+                                    {/* Quick select presets */}
+                                    <div className="px-3 pt-3 pb-2.5 border-b border-border/60">
+                                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Quick select</p>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {[
+                                          {label:"Just this day",preset:"just"},
+                                          {label:"All days",preset:"all"},
+                                          {label:`Every ${WEEKDAY_NAME[weekdayOf(pickerKey?.split("::")[0]??"")]}`,preset:"every"},
+                                          {label:"Weekdays",preset:"weekdays"},
+                                          {label:"Weekends",preset:"weekends"},
+                                        ].map(({label,preset})=>(
+                                          <button key={preset} type="button" onClick={()=>onApplyPreset(preset)}
+                                            className="text-[11px] px-2.5 py-1 rounded-full border border-border/70 text-muted-foreground font-medium hover:border-accent/50 hover:bg-accent/10 hover:text-accent transition-all">
+                                            {label}
+                                          </button>
                                         ))}
                                       </div>
                                     </div>
-                                    <div className="p-2 max-h-40 overflow-y-auto">
-                                      <div className="flex flex-wrap gap-1">
-                                        {schedule.scheduleDates.map((d)=>{ const on=pickerDates.has(d.key),past=d.key<_todayKey; return (<button key={d.key} type="button" disabled={past} onClick={()=>onTogglePickerDate(d.key)} className={cn("flex flex-col items-center px-2 py-1 rounded-md text-center min-w-[36px] text-[10px] transition-all border",past?"opacity-30 cursor-not-allowed border-transparent bg-muted/30":on?"bg-primary text-primary-foreground border-primary":"border-border hover:border-primary/40 hover:bg-muted/40")}><strong className="text-xs leading-none">{d.dateNum}</strong><span className="leading-none mt-0.5">{d.dayLabel}</span></button>); })}
+                                    {/* Date grid */}
+                                    <div className="px-3 pt-2.5 pb-2">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Select dates</p>
+                                        {pickerDates.size>0&&(
+                                          <span className="text-[10px] font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded-full border border-accent/20">
+                                            {pickerDates.size} selected
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="max-h-[152px] overflow-y-auto">
+                                        <div className="grid grid-cols-7 gap-1">
+                                          {schedule.scheduleDates.map((d)=>{
+                                            const on=pickerDates.has(d.key), past=d.key<_todayKey;
+                                            return (
+                                              <button key={d.key} type="button" disabled={past} onClick={()=>onTogglePickerDate(d.key)}
+                                                className={cn(
+                                                  "flex flex-col items-center py-1.5 px-0.5 rounded-lg text-center transition-all border select-none",
+                                                  past
+                                                    ? "opacity-25 cursor-not-allowed border-transparent"
+                                                    : on
+                                                      ? "bg-accent text-accent-foreground border-accent shadow-sm"
+                                                      : "border-border/60 text-foreground hover:border-accent/40 hover:bg-accent/10 hover:text-accent"
+                                                )}>
+                                                <strong className="text-[12px] leading-none font-bold">{d.dateNum}</strong>
+                                                <span className="text-[8px] leading-none mt-0.5 font-medium opacity-80">{d.dayLabel}</span>
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
                                       </div>
                                     </div>
-                                    <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-muted/10">
-                                      <span className="text-[11px] text-muted-foreground">{pickerDates.size} day{pickerDates.size!==1?"s":""} selected</span>
-                                      <div className="flex gap-1.5">
-                                        <button type="button" onClick={onClosePicker} className="text-xs px-2.5 py-1 rounded-md border border-border hover:bg-muted transition-colors">Cancel</button>
-                                        <button type="button" onClick={onApplyPickerAssign} disabled={pickerDates.size===0} className="text-xs px-2.5 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors">Assign</button>
+                                    {/* Footer */}
+                                    <div className="flex items-center justify-between px-3 py-2.5 border-t border-border/70 bg-muted/20">
+                                      <span className="text-[11px] text-muted-foreground font-medium">
+                                        {pickerDates.size===0?"No days selected":`${pickerDates.size} day${pickerDates.size!==1?"s":""} selected`}
+                                      </span>
+                                      <div className="flex gap-2">
+                                        <button type="button" onClick={onClosePicker}
+                                          className="text-xs px-3 py-1.5 rounded-lg border border-border/70 bg-background hover:bg-muted/60 text-foreground transition-colors font-medium">
+                                          Cancel
+                                        </button>
+                                        <button type="button" onClick={onApplyPickerAssign} disabled={pickerDates.size===0}
+                                          className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-medium shadow-sm">
+                                          Assign
+                                        </button>
                                       </div>
                                     </div>
                                   </div>

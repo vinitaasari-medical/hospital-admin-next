@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Protects the server-side JWT signing endpoint from cross-origin callers.
 // A browser script on another origin cannot forge a signing request.
-export function middleware(request: NextRequest): NextResponse {
+export function proxy(request: NextRequest): NextResponse {
   if (request.nextUrl.pathname === "/api/auth/sign-token") {
     const origin = request.headers.get("origin");
     const host = request.headers.get("host");

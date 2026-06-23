@@ -76,17 +76,17 @@ const Settings = () => {
                   </div>
                   <Separator />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Network Name</Label>
                       <Input value={networkName} onChange={(e) => setNetworkName(e.target.value)} />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Contact Email</Label>
                       <Input value={networkEmail} onChange={(e) => setNetworkEmail(e.target.value)} type="email" />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Timezone</Label>
                       <Select value={timezone} onValueChange={setTimezone}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -100,7 +100,7 @@ const Settings = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Language</Label>
                       <Select value={language} onValueChange={setLanguage}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -113,7 +113,7 @@ const Settings = () => {
                       </Select>
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Welcome Message</Label>
                     <Textarea value={welcomeMsg} onChange={(e) => setWelcomeMsg(e.target.value)} rows={3} />
                     <p className="text-xs text-muted-foreground">Shown to users when they first join the network.</p>
@@ -179,7 +179,7 @@ const Settings = () => {
                     <Switch checked={ipWhitelist} onCheckedChange={setIpWhitelist} />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Session Timeout (minutes)</Label>
                       <Select value={sessionTimeout} onValueChange={setSessionTimeout}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -191,7 +191,7 @@ const Settings = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Password Expiry (days)</Label>
                       <Select value={passwordExpiry} onValueChange={setPasswordExpiry}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
@@ -217,7 +217,7 @@ const Settings = () => {
                     <p className="text-sm text-muted-foreground">Customize how the dashboard looks.</p>
                   </div>
                   <Separator />
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Theme</Label>
                     <Select value={theme} onValueChange={setTheme}>
                       <SelectTrigger className="max-w-xs"><SelectValue /></SelectTrigger>

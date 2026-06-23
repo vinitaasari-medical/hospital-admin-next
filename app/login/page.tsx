@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { apiClient } from "@/lib/api/apiClient";
 import type { LoginResponseData } from "@/hooks/useAuth";
@@ -25,8 +25,8 @@ const Login = () => {
   const [hospitalId, setHospitalId] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const router = useRouter();
-  const { toast } = useToast();
   const { getUserId, setUser } = useAuth();
 
   useEffect(() => {
@@ -41,10 +41,11 @@ const Login = () => {
     e.preventDefault();
 
     if (!email || !password || !hospitalId) {
-      toast({ title: "Please fill in all fields", variant: "destructive" });
+      setLoginError("Please fill in all fields.");
       return;
     }
 
+    setLoginError("");
     setIsLoading(true);
 
     try {
@@ -109,8 +110,6 @@ const Login = () => {
 
       setUser(data);
 
-      toast({ title: "Login Successful" });
-
       const path =
         localStorage.getItem("subnetworks_departments") === "true"
           ? "/admin/departments"
@@ -119,10 +118,7 @@ const Login = () => {
       window.location.href = path;
     } catch (error: unknown) {
       const err = error as { message?: string; userMessage?: string };
-      toast({
-        title: err.userMessage || err.message || "Login failed. Please try again.",
-        variant: "destructive",
-      });
+      setLoginError(err.userMessage || err.message || "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -178,25 +174,25 @@ const Login = () => {
           <p className="text-muted-foreground mb-8">Sign in to your dashboard</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Email</label>
+            <div className="space-y-3">
+              <Label>Email</Label>
               <Input
                 type="email"
                 placeholder="name@hospital.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setLoginError(""); }}
                 className="h-11"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Password</label>
+            <div className="space-y-3">
+              <Label>Password</Label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setLoginError(""); }}
                   className="h-11 pr-10"
                 />
                 <button
@@ -209,16 +205,20 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Organisation ID</label>
+            <div className="space-y-3">
+              <Label>Organisation ID</Label>
               <Input
                 type="text"
                 placeholder="Enter your organisation ID"
                 value={hospitalId}
-                onChange={(e) => setHospitalId(e.target.value)}
+                onChange={(e) => { setHospitalId(e.target.value); setLoginError(""); }}
                 className="h-11"
               />
             </div>
+
+            {loginError && (
+              <p className="text-sm text-destructive">{loginError}</p>
+            )}
 
             <Button
               type="submit"

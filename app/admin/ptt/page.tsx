@@ -49,12 +49,14 @@ const PTTOverview = () => {
               <p className="text-sm text-muted-foreground mt-1">Push-To-Talk system overview and real-time status</p>
             </motion.div>
 
+            {/* Stat cards — hidden
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <StatCard title="Active Channels" value="4" change="2 emergency" changeType="neutral" icon={Radio} />
               <StatCard title="Connected Users" value="74" change="↑ 8% from yesterday" changeType="positive" icon={Users} />
               <StatCard title="Active Speakers" value="3" change="Real-time" changeType="neutral" icon={Mic} />
               <StatCard title="Emergency Alerts" value="1" change="Unacknowledged" changeType="negative" icon={AlertTriangle} />
             </div>
+            */}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="lg:col-span-2 rounded-xl bg-card p-5 shadow-card">

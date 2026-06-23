@@ -202,13 +202,14 @@ export const UserPickerModal = ({
                   <th className="px-4 py-3 whitespace-nowrap">Mobile Number</th>
                   <th className="px-4 py-3 whitespace-nowrap">Email</th>
                   <th className="px-4 py-3 whitespace-nowrap">Staff ID</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Profession</th>
                   <th className="px-4 py-3 whitespace-nowrap">Rank</th>
                 </tr>
               </thead>
               <tbody>
                 {searching && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                       <div className="flex items-center justify-center gap-2">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                         Searching…
@@ -231,10 +232,7 @@ export const UserPickerModal = ({
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 min-w-[180px]">
                         <AppAvatar name={u.name} size="sm" />
-                        <div className="min-w-0">
-                          <p className="font-medium text-foreground truncate">{u.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{u.jobTitle}</p>
-                        </div>
+                        <p className="font-medium text-foreground truncate">{u.name}</p>
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -243,12 +241,13 @@ export const UserPickerModal = ({
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{u.phone}</td>
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{u.email}</td>
                     <td className="px-4 py-3 font-mono whitespace-nowrap">{u.staffId}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{u.jobTitle || "—"}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{u.rank}</td>
                   </tr>
                 ))}
                 {!searching && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                       No users found
                     </td>
                   </tr>
@@ -271,7 +270,7 @@ interface HeadPickerFieldProps {
 }
 
 export const HeadPickerField = ({ head, onPick, onClear }: HeadPickerFieldProps) => (
-  <div className="space-y-2">
+  <div className="space-y-3">
     <Label className="text-sm font-medium">Department Head</Label>
     <button
       type="button"
@@ -591,12 +590,14 @@ const Departments = () => {
             </Button>
           </motion.div>
 
+          {/* Stat cards — hidden
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             <AppStatCard label="Total Departments" value={counts.total} icon={FolderOpen} />
             <AppStatCard label="Primary" value={counts.primary} icon={Building2} />
             <AppStatCard label="Sub-Departments" value={counts.sub} icon={Building2} />
             <AppStatCard label="Total Members" value={counts.members} icon={FolderOpen} />
           </div>
+          */}
 
           {loading ? (
             <div className="flex items-center justify-center py-24">

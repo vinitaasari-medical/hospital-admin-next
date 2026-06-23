@@ -50,9 +50,11 @@ interface NetworkUser {
   email: string;
   staffId: string;
   phone: string;
+  userType: string;
   profession: string;
   rank: string;
   departments: string[];
+  subNetwork: string;
   status: UserStatus;
   // raw values for actions
   professionId: string;
@@ -82,12 +84,14 @@ interface ApiNetworkUser {
   staff_id?: string;
   country_code?: string;
   phone_number?: string;
+  user_type?: string;
   profession_id?: string;
   profession_name?: string;
   rank_id?: string;
   rank_name?: string;
   status?: string;
   departments?: Array<{ id: string; department_name: string }>;
+  subnetwork_name?: string;
   is_mapped_to_subnetwork?: number;
 }
 
@@ -112,7 +116,14 @@ const IMPORT_STATUS_MAP: Record<string, MapImportStatus> = {
   pending: "Processing",
 };
 
-function mapApiUser(row: ApiNetworkUser): NetworkUser {
+function mapUserType(raw?: string): string {
+  if (!raw) return "—";
+  if (raw === "fulltime") return "Full Time";
+  if (raw === "trainee") return "Part Time";
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+function mapApiUser(row: ApiNetworkUser, subNetworkName = ""): NetworkUser {
   return {
     id: row.id,
     firstName: row.first_name ?? "",
@@ -123,9 +134,11 @@ function mapApiUser(row: ApiNetworkUser): NetworkUser {
       row.country_code && row.phone_number
         ? `${row.country_code} ${row.phone_number}`
         : (row.phone_number ?? ""),
+    userType: mapUserType(row.user_type),
     profession: row.profession_name ?? "",
     rank: row.rank_name ?? "",
     departments: row.departments?.map((d) => d.department_name) ?? [],
+    subNetwork: row.subnetwork_name ?? subNetworkName,
     status: (row.status === "approved" || row.status === "active") ? "Active" : "Pending",
     professionId: row.profession_id ?? "",
     rankId: row.rank_id ?? "",
@@ -757,7 +770,7 @@ const NetworkUsersPage = () => {
         next_token: token,
         search_string: q || undefined,
       });
-      const rows = ((res.content?.data as ApiNetworkUser[]) ?? []).map(mapApiUser);
+      const rows = ((res.content?.data as ApiNetworkUser[]) ?? []).map((u) => mapApiUser(u, scope.name));
       setUsers(token ? (prev) => [...prev, ...rows] : rows);
       setUsersNextToken(res.content?.next_token ?? null);
       setUsersHasMore(res.content?.has_more ?? false);
@@ -843,12 +856,7 @@ const NetworkUsersPage = () => {
       cell: (u) => (
         <div className="flex items-center gap-3">
           <AppAvatar name={`${u.firstName} ${u.lastName}`} size="sm" />
-          <div className="min-w-0">
-            <p className="font-medium text-foreground truncate">{u.firstName} {u.lastName}</p>
-            {u.staffId && (
-              <p className="text-xs text-muted-foreground font-mono">{u.staffId}</p>
-            )}
-          </div>
+          <p className="font-medium text-foreground truncate">{u.firstName} {u.lastName}</p>
         </div>
       ),
     },
@@ -866,8 +874,22 @@ const NetworkUsersPage = () => {
       cell: (u) => <span className="text-sm text-muted-foreground truncate">{u.email || "—"}</span>,
     },
     {
+      key: "staffId",
+      header: "Staff ID",
+      sortable: true,
+      searchable: true,
+      hideOnMobile: true,
+      cell: (u) => <span className="text-sm font-mono text-foreground">{u.staffId || "—"}</span>,
+    },
+    {
+      key: "subNetwork",
+      header: "Sub-Network",
+      hideOnMobile: true,
+      cell: (u) => <span className="text-sm text-muted-foreground">{u.subNetwork || "—"}</span>,
+    },
+    {
       key: "departments",
-      header: "Departments",
+      header: "Department",
       hideOnMobile: true,
       cell: (u) =>
         u.departments.length ? (
@@ -894,6 +916,13 @@ const NetworkUsersPage = () => {
       sortable: true,
       hideOnMobile: true,
       cell: (u) => <span className="text-sm text-muted-foreground">{u.rank || "—"}</span>,
+    },
+    {
+      key: "userType",
+      header: "User Type",
+      sortable: true,
+      hideOnMobile: true,
+      cell: (u) => <span className="text-sm text-muted-foreground">{u.userType || "—"}</span>,
     },
     {
       key: "status",
@@ -1106,12 +1135,13 @@ const NetworkUsersPage = () => {
               </div>
             </motion.div>
 
-            {/* Stat cards */}
+            {/* Stat cards — hidden
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <AppStatCard label="Total Users" value={totalUsers} icon={Users} />
               <AppStatCard label="Active" value={activeUsers} icon={CheckCircle2} />
               <AppStatCard label="Pending" value={pendingUsers} icon={Clock} />
             </div>
+            */}
 
             {/* Tabs */}
             <AppTabs items={tabItems} defaultValue="users" />

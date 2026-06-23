@@ -667,12 +667,13 @@ const Broadcast = () => {
             </div>
           </motion.div>
 
-          {/* Stats */}
+          {/* Stats — hidden
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
             <AppStatCard label="Broadcasts" value={broadcasts.length.toString()} icon={Send} />
             <AppStatCard label="Lists" value={lists.length.toString()} icon={UsersRound} />
             <AppStatCard label="Topics" value={topics.length.toString()} icon={Hash} />
           </div>
+          */}
 
           {/* Main Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -835,7 +836,7 @@ const Broadcast = () => {
         }
       >
         <div className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>To</Label>
             <div className="flex h-10 items-center rounded-md border border-input bg-muted/40 px-3 gap-2 text-sm text-muted-foreground">
               <Globe className="h-4 w-4" />
@@ -843,7 +844,7 @@ const Broadcast = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>
               Message Title <span className="text-destructive">*</span>
             </Label>
@@ -854,7 +855,7 @@ const Broadcast = () => {
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>
               Message <span className="text-destructive">*</span>
             </Label>
@@ -867,7 +868,7 @@ const Broadcast = () => {
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>Attachments</Label>
             <label className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-border rounded-xl p-6 cursor-pointer hover:bg-muted/30 transition-colors">
               <Upload className="h-8 w-8 text-muted-foreground" />

@@ -80,12 +80,14 @@ const PTTDevices = () => {
             <p className="text-sm text-muted-foreground mt-1">Monitor connected devices, manage sessions, and enforce device policies</p>
           </motion.div>
 
+          {/* Stat cards — hidden
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard title="Connected Devices" value={String(devices.filter(d => d.status === "online").length)} change="Active now" changeType="positive" icon={MonitorSmartphone} />
             <StatCard title="Weak Connections" value={String(devices.filter(d => d.status === "weak").length)} change="Monitoring" changeType="negative" icon={WifiOff} />
             <StatCard title="Simultaneous Logins" value={String(devices.filter(d => d.simultaneousLogin).length)} change="Detected" changeType="negative" icon={AlertTriangle} />
             <StatCard title="Device-Locked Users" value={String(devices.filter(d => d.singleDeviceLock).length)} change="Enforced" changeType="neutral" icon={Lock} />
           </div>
+          */}
 
           {/* Search */}
           <div className="mb-4">

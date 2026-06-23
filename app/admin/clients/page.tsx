@@ -544,11 +544,13 @@ const ClientManagement = () => {
               </div>
             </motion.div>
 
+            {/* Stat cards — hidden
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <AppStatCard label="Total Networks" value={clients.length} icon={Network} />
               <AppStatCard label="Active" value={clients.filter((c) => c.status === "Active").length} icon={CheckCircle2} />
               <AppStatCard label="Total Sub-Networks" value={clients.reduce((sum, c) => sum + c.branches.length, 0)} icon={GitBranch} />
             </div>
+            */}
 
             <DataTable<Client>
               columns={clientColumns}

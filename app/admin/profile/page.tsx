@@ -168,6 +168,7 @@ const Profile = () => {
         u.last_name = lastName;
         u.profile_url = uploadedUrl;
         localStorage.setItem("user", JSON.stringify(u));
+        window.dispatchEvent(new Event("storage"));
       }
 
       toast({ title: "Profile updated", description: "Your profile information has been saved." });
@@ -287,7 +288,7 @@ const Profile = () => {
                   </div>
                   <Separator />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>First Name</Label>
                       <Input
                         value={firstName}
@@ -296,7 +297,7 @@ const Profile = () => {
                       />
                       {firstNameError && <p className="text-xs text-destructive">{firstNameError}</p>}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Last Name</Label>
                       <Input
                         value={lastName}
@@ -307,11 +308,11 @@ const Profile = () => {
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Email</Label>
                       <Input value={email} disabled className="bg-muted/50" type="email" />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Phone</Label>
                       <PhoneInput
                         value={phone}
@@ -339,7 +340,7 @@ const Profile = () => {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label>Role</Label>
                     <Input value={role} disabled className="bg-muted/50" />
                   </div>
@@ -364,7 +365,7 @@ const Profile = () => {
                   </div>
                   <Separator />
                   <div className="max-w-md space-y-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Current Password</Label>
                       <Input
                         type="password"
@@ -374,7 +375,7 @@ const Profile = () => {
                       />
                       {pwErrors.old && <p className="text-xs text-destructive">{pwErrors.old}</p>}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>New Password</Label>
                       <Input
                         type="password"
@@ -389,7 +390,7 @@ const Profile = () => {
                         </p>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Label>Confirm New Password</Label>
                       <Input
                         type="password"

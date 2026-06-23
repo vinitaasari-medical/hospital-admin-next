@@ -538,19 +538,20 @@ const UserPickerModal = ({
                   <th className="px-4 py-3 whitespace-nowrap">Mobile Number</th>
                   <th className="px-4 py-3 whitespace-nowrap">Email</th>
                   <th className="px-4 py-3 whitespace-nowrap">Staff ID</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Profession</th>
                   <th className="px-4 py-3 whitespace-nowrap">Rank</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                       Loading…
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                       No users found
                     </td>
                   </tr>
@@ -577,13 +578,9 @@ const UserPickerModal = ({
                           <AppAvatar name={u.name} size="sm" />
                           <div className="min-w-0">
                             <p className="font-medium text-foreground truncate">{u.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {u.isAlreadyAdmin ? (
-                                <span className="text-destructive font-medium">Already Admin</span>
-                              ) : (
-                                u.jobTitle
-                              )}
-                            </p>
+                            {u.isAlreadyAdmin && (
+                              <p className="text-xs text-destructive font-medium">Already Admin</p>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -597,6 +594,7 @@ const UserPickerModal = ({
                         {u.email}
                       </td>
                       <td className="px-4 py-3 font-mono whitespace-nowrap">{u.staffId}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">{u.jobTitle || "—"}</td>
                       <td className="px-4 py-3 whitespace-nowrap">{u.rank}</td>
                     </tr>
                   ))
@@ -1144,11 +1142,13 @@ const AdminManagement = () => {
               </Button>
             </motion.div>
 
+            {/* Stat cards — hidden
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <AppStatCard label="Total Admins" value={counts.total} icon={Shield} />
               <AppStatCard label="Active Now" value={counts.active} icon={Users} />
               <AppStatCard label="Cluster Admins" value={counts.clusterAdmins} icon={Shield} />
             </div>
+            */}
 
             <DataTable<Admin>
               columns={columns}

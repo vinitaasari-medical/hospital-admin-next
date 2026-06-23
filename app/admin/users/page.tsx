@@ -1421,33 +1421,14 @@ const UserManagement = () => {
             </div>
           </motion.div>
 
-          {/* Stats */}
+          {/* Stats — hidden
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            <AppStatCard
-              label="Total Users"
-              value={users.length.toString()}
-              icon={Users}
-            />
-            <AppStatCard
-              label="Active"
-              value={users
-                .filter((u) => u.status === "Active")
-                .length.toString()}
-              icon={CheckCircle2}
-            />
-            <AppStatCard
-              label="Pending"
-              value={users
-                .filter((u) => u.status === "Pending")
-                .length.toString()}
-              icon={Clock}
-            />
-            <AppStatCard
-              label="Imports"
-              value={imports.length.toString()}
-              icon={FileSpreadsheet}
-            />
+            <AppStatCard label="Total Users" value={users.length.toString()} icon={Users} />
+            <AppStatCard label="Active" value={users.filter((u) => u.status === "Active").length.toString()} icon={CheckCircle2} />
+            <AppStatCard label="Pending" value={users.filter((u) => u.status === "Pending").length.toString()} icon={Clock} />
+            <AppStatCard label="Imports" value={imports.length.toString()} icon={FileSpreadsheet} />
           </div>
+          */}
 
           <AppTabs
             value={activeTab}

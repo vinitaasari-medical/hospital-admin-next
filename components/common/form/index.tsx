@@ -41,7 +41,7 @@ interface FieldShellProps {
 
 function FieldShell({ label, helper, error, required, className, children, id }: FieldShellProps) {
   return (
-    <div className={cn("space-y-1.5", className)}>
+    <div className={cn("space-y-3", className)}>
       {label && (
         <Label htmlFor={id} className="text-sm">
           {label}
